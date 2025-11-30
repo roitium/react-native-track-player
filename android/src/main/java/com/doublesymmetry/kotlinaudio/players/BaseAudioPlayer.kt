@@ -162,6 +162,7 @@ abstract class BaseAudioPlayer internal constructor(
         playerEventHolder.updateAudioPlayerState(AudioPlayerState.IDLE)
 
         val renderer = DefaultRenderersFactory(context)
+        renderer.experimentalSetMediaCodecAsyncCryptoFlagEnabled(false)
         renderer.setExtensionRendererMode(DefaultRenderersFactory.EXTENSION_RENDERER_MODE_PREFER)
         exoPlayer = ExoPlayer
             .Builder(context)

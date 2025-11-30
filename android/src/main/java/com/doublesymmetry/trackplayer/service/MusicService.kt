@@ -56,6 +56,7 @@ import kotlinx.coroutines.flow.flow
 import timber.log.Timber
 import java.util.concurrent.TimeUnit
 import kotlin.system.exitProcess
+import java.util.UUID
 
 @OptIn(UnstableApi::class)
 @MainThread
@@ -110,9 +111,11 @@ class MusicService : HeadlessJsMediaService() {
             data = Uri.parse("trackplayer://notification.click")
             action = Intent.ACTION_VIEW
         }
+        val uniqueSessionId = "TrackPlayer_${UUID.randomUUID()}"
         mediaSession = MediaLibrarySession.Builder(this, fakePlayer,
             InnerMediaSessionCallback()
         )
+            .setId(uniqueSessionId)
             .setBitmapLoader(CacheBitmapLoader(CoilBitmapLoader(this)))
             // https://github.com/androidx/media/issues/1218
             .setSessionActivity(
