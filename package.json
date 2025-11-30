@@ -1,6 +1,6 @@
 {
   "name": "@roitium/react-native-track-player",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Fork of react-native-track-player. Modified to enhance BBPlayer. A fully fledged audio module created for music apps",
   "main": "./lib/module/index.js",
   "types": "./lib/typescript/src/index.d.ts",
