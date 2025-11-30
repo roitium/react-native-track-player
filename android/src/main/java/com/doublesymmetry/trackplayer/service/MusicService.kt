@@ -584,8 +584,6 @@ class MusicService : HeadlessJsMediaService() {
 
         scope.launch {
             event.audioItemTransition.collect {
-                volumeFadeJob?.cancel()
-
                 if (it !is AudioItemTransitionReason.REPEAT) {
                     emitPlaybackTrackChangedEvents(
                         player.previousIndex,
