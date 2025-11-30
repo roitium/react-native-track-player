@@ -380,15 +380,12 @@ class MusicService : HeadlessJsMediaService() {
       val measured = track.measuredLoudness ?: 0.0
       val target = track.targetLoudness ?: -14.0
 
-      Timber.d("RNTP LOUDNESS DEBUG Title=${track.title} Measured=$measured Target=$target")
-
       if (measured == 0.0) 1.0f else calculateLoudnessGain(measured, target)
     } else {
       1.0f
     }
 
     val targetVol = userVolume * gain
-    Timber.d("RNTP LOUDNESS DEBUG UserVol=$userVolume Gain=$gain FinalTarget=$targetVol")
 
     if (isFadeEnabled) {
       player.volume = 0f

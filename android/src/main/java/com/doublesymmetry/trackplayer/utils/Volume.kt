@@ -15,7 +15,6 @@ import timber.log.Timber
 fun calculateLoudnessGain(measuredI: Double, targetI: Double = -14.0): Float {
 
   if (measuredI == 0.0) {
-    Timber.d("RNTP LOUDNESS DEBUG: Measured is 0.0! Bypass it.")
     return 1.0f
   }
 
@@ -23,8 +22,6 @@ fun calculateLoudnessGain(measuredI: Double, targetI: Double = -14.0): Float {
   val linearFactor = 10.0.pow(gainDb / 20.0).toFloat()
 
   val finalResult = linearFactor.coerceIn(0.0f, 1.0f)
-
-  Timber.d("RNTP LOUDNESS DEBUG: Final Volume Result=$finalResult")
 
   return finalResult
 }
@@ -51,7 +48,6 @@ fun androidx.media3.common.Player.fadeInTo(
       val newVol = volumeStep * i
       val finalVol = newVol.coerceAtMost(targetVolume)
       volume = finalVol
-      Timber.d("RNTP LOUDNESS DEBUG: Animated Change Volume To: $finalVol")
       delay(stepInterval)
     }
     volume = targetVolume
