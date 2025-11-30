@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.1.4](https://github.com/bbplayer-app/react-native-track-player/compare/v1.1.3...v1.1.4) (2025-11-30)
+
+### Bug Fixes
+
+* remove cancel code ([9800115](https://github.com/bbplayer-app/react-native-track-player/commit/9800115076b13c7b73e5bb53f018f12bd0e554b6))
+
 ## [1.1.3](https://github.com/bbplayer-app/react-native-track-player/compare/v1.1.2...v1.1.3) (2025-11-30)
 
 ### Bug Fixes
