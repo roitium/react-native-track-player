@@ -372,10 +372,33 @@ class MusicService : HeadlessJsMediaService() {
         player.add(items, atIndex)
     }
 
-    @MainThread
-    fun load(track: Track) {
-        player.load(track.toAudioItem())
+  @MainThread
+  fun load(track: Track) {
+    volumeFadeJob?.cancel()
+
+    val gain = if (isLoudnessNormalizationEnabled) {
+      val measured = track.measuredLoudness ?: 0.0
+      val target = track.targetLoudness ?: -14.0
+
+      Timber.d("RNTP LOUDNESS DEBUG Title=${track.title} Measured=$measured Target=$target")
+
+      if (measured == 0.0) 1.0f else calculateLoudnessGain(measured, target)
+    } else {
+      1.0f
     }
+
+    val targetVol = userVolume * gain
+    Timber.d("RNTP LOUDNESS DEBUG UserVol=$userVolume Gain=$gain FinalTarget=$targetVol")
+
+    if (isFadeEnabled) {
+      player.volume = 0f
+      volumeFadeJob = player.forwardingPlayer.fadeInTo(targetVol, 600L, scope)
+    } else {
+      player.volume = targetVol
+    }
+
+    player.load(track.toAudioItem())
+  }
 
     @MainThread
     fun move(fromIndex: Int, toIndex: Int) {
@@ -562,22 +585,6 @@ class MusicService : HeadlessJsMediaService() {
         scope.launch {
             event.audioItemTransition.collect {
                 volumeFadeJob?.cancel()
-                val track = currentTrack
-                Timber.d("RNTP LOUDNESS DEBUG: trackTitle=${track?.title} measured=${track?.measuredLoudness} target=${track?.targetLoudness}")
-                val gain = if (isLoudnessNormalizationEnabled) {
-                    val measured = track?.measuredLoudness ?: 0.0
-                    val target = track?.targetLoudness ?: -14.0
-                    if (measured == 0.0) 1.0f else calculateLoudnessGain(measured, target)
-                } else {
-                    1.0f
-                }
-                val targetVol = userVolume * gain
-
-                if (isFadeEnabled) {
-                    volumeFadeJob = player.forwardingPlayer.fadeInTo(targetVol, 600L, scope)
-                } else {
-                    player.volume = targetVol
-                }
 
                 if (it !is AudioItemTransitionReason.REPEAT) {
                     emitPlaybackTrackChangedEvents(
