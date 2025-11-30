@@ -37,4 +37,16 @@ export interface AndroidOptions {
    * @default false
    */
   shuffle?: boolean;
+
+  /**
+   * 开启响度均衡（需要 track 中包含 loudness 数据）
+   * @default false
+   */
+  loudnessNormalizationEnabled?: boolean;
+
+  /**
+   * 开启切歌淡入淡出
+   * @default false
+   */
+  fadeEnabled?: boolean;
 }

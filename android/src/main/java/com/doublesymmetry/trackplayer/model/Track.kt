@@ -25,6 +25,8 @@ class Track
     var originalItem: Bundle
     var headers: HashMap<String, String>? = null
     val queueId: Long
+    var measuredLoudness: Double? = null
+    var targetLoudness: Double? = null
 
     override fun setMetadata(context: Context, bundle: Bundle?, ratingType: Int) {
         super.setMetadata(context, bundle, ratingType)
@@ -73,6 +75,11 @@ class Track
             for (header in httpHeaders.keySet()) {
                 headers!![header] = httpHeaders.getString(header)!!
             }
+        }
+        val loudness = bundle.getBundle("loudness")
+        if (loudness != null) {
+            measuredLoudness = loudness.getDouble("measured_i")
+            targetLoudness = loudness.getDouble("target_i")
         }
         setMetadata(context, bundle, ratingType)
         queueId = System.currentTimeMillis()

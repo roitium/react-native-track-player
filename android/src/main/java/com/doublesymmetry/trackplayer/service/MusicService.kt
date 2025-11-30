@@ -44,6 +44,8 @@ import com.doublesymmetry.trackplayer.module.MusicEvents.Companion.METADATA_PAYL
 import com.doublesymmetry.trackplayer.utils.BundleUtils
 import com.doublesymmetry.trackplayer.utils.BundleUtils.setRating
 import com.doublesymmetry.trackplayer.utils.CoilBitmapLoader
+import com.doublesymmetry.trackplayer.utils.calculateLoudnessGain
+import com.doublesymmetry.trackplayer.utils.fadeInTo
 import com.facebook.react.bridge.Arguments
 import com.facebook.react.jstasks.HeadlessJsTaskConfig
 import com.google.common.collect.ImmutableList
@@ -69,6 +71,10 @@ class MusicService : HeadlessJsMediaService() {
     private var customLayout: List<CommandButton> = listOf()
     private var lastWake: Long = 0
     var onStartCommandIntentValid: Boolean = true
+    private var userVolume: Float = 1.0f
+    private var volumeFadeJob: Job? = null
+    private var isLoudnessNormalizationEnabled: Boolean = false
+    private var isFadeEnabled: Boolean = false
 
     fun acquireWakeLock() {
         acquireWakeLockNow(this)
@@ -239,6 +245,9 @@ class MusicService : HeadlessJsMediaService() {
         player.alwaysPauseOnInterruption =
             androidOptions?.getBoolean(PAUSE_ON_INTERRUPTION_KEY) ?: false
         player.shuffleMode = androidOptions?.getBoolean(SHUFFLE_KEY) ?: false
+
+        isLoudnessNormalizationEnabled = androidOptions?.getBoolean(LOUDNESS_NORMALIZATION_ENABLED_KEY) ?: false
+        isFadeEnabled = androidOptions?.getBoolean(FADE_ENABLED_KEY) ?: false
 
         // setup progress update events if configured
         progressUpdateJob?.cancel()
@@ -460,11 +469,22 @@ class MusicService : HeadlessJsMediaService() {
     }
 
     @MainThread
-    fun getVolume(): Float = player.volume
+    fun getVolume(): Float = userVolume
 
     @MainThread
     fun setVolume(value: Float) {
-        player.volume = value
+        userVolume = value
+        volumeFadeJob?.cancel()
+        val gain = if (isLoudnessNormalizationEnabled) {
+            currentTrack?.let { track ->
+                val measured = track.measuredLoudness ?: 0.0
+                val target = track.targetLoudness ?: -14.0
+                if (measured == 0.0) 1.0f else calculateLoudnessGain(measured, target)
+            } ?: 1.0f
+        } else {
+            1.0f
+        }
+        player.volume = userVolume * gain
     }
 
     @MainThread
@@ -538,6 +558,23 @@ class MusicService : HeadlessJsMediaService() {
 
         scope.launch {
             event.audioItemTransition.collect {
+                volumeFadeJob?.cancel()
+                val track = currentTrack
+                val gain = if (isLoudnessNormalizationEnabled) {
+                    val measured = track?.measuredLoudness ?: 0.0
+                    val target = track?.targetLoudness ?: -14.0
+                    if (measured == 0.0) 1.0f else calculateLoudnessGain(measured, target)
+                } else {
+                    1.0f
+                }
+                val targetVol = userVolume * gain
+                
+                if (isFadeEnabled) {
+                    volumeFadeJob = player.forwardingPlayer.fadeInTo(targetVol, 600L, scope)
+                } else {
+                    player.volume = targetVol
+                }
+
                 if (it !is AudioItemTransitionReason.REPEAT) {
                     emitPlaybackTrackChangedEvents(
                         player.previousIndex,
@@ -1026,6 +1063,9 @@ class MusicService : HeadlessJsMediaService() {
         const val ALWAYS_SHOW_NEXT = "androidAlwaysShowNext"
         const val SKIP_SILENCE = "androidSkipSilence"
         const val WAKE_MODE = "androidWakeMode"
+
+        const val LOUDNESS_NORMALIZATION_ENABLED_KEY = "loudnessNormalizationEnabled"
+        const val FADE_ENABLED_KEY = "fadeEnabled"
 
         const val DEFAULT_JUMP_INTERVAL = 15.0
         const val DEFAULT_STOP_FOREGROUND_GRACE_PERIOD = 5
